@@ -23,7 +23,6 @@ public class PlayerController : MonoBehaviour {
     }
 
     void FixedUpdate() {
-        Debug.Log(body.velocity.x);
         float decel = speedDamp * Time.fixedDeltaTime;
         if(xVel > decel) xVel -= decel;
         else xVel = 0;
@@ -35,6 +34,10 @@ public class PlayerController : MonoBehaviour {
 	        	jump = false;
 	        }
     	} else body.velocity = new Vector2(xVel, body.velocity.y);
+    }
+
+    void OnCollisionEnter(Collision c) {
+        
     }
 
     void OnEnable() {
