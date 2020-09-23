@@ -13,6 +13,9 @@ public class PlayerController : MonoBehaviour {
 	public float groundCheckRadius = 0.15f;
 	public float groundCheckTolerance = 1f;
     public float bounceThreshold = 0.14f;
+    public float bounceTime = 1f;
+    public float bounceTimeout = 3f;
+    public float bounceSpeedKillFactor = .5f;
 
 	private Inputs controls;
 	private bool jump = false;
@@ -25,6 +28,8 @@ public class PlayerController : MonoBehaviour {
     private float lastXVel = 0f;
     private Vector2 prevBodyPos;
     private float goalVelocity = 0f;
+    private float bounceAccel = 0f;
+    private float bounceTimeElapsed = 0f;
 
     void Awake() {
     	controls = new Inputs();
@@ -42,19 +47,27 @@ public class PlayerController : MonoBehaviour {
             if(body.velocity.x > 0) {
                 body.AddForce(Vector2.left * speedDamp); // Apply speed damping
             } else if(body.velocity.x < 0) {
-                //body.AddForce(Vector2.right * body.mass * -body.velocity.x); // Prevent backwards movement not from bounce
+                body.AddForce(Vector2.right * body.mass * -body.velocity.x); // Prevent backwards movement not from bounce
             }
-        } else if(!bouncing && bounce) { // Bounce just starting
-            Debug.Log("Bounce!");
+        }
+        else if(bounce) { // Bounce just starting
             bounce = false;
             bouncing = true;
 
-            goalVelocity = lastXVel / 2;
-            Debug.Log(lastXVel);
+            goalVelocity = lastXVel * bounceSpeedKillFactor;
+            bounceAccel = (goalVelocity + lastXVel) / (bounceTime * 10); // 10 is an arbitrary factor so bounceTime makes more sense
+            bounceTimeElapsed = 0;
+
             body.AddForce(Vector2.left * (body.mass * lastXVel), ForceMode2D.Impulse);
-        } else if(bouncing) {
-            bouncing = false;
-            bounce = false;
+        }
+        else if(bouncing) { // We're mid bounce
+        	bounceTimeElapsed += Time.deltaTime;
+        	if(bounceTimeElapsed >= bounceTimeout || body.velocity.x >= goalVelocity) { // We've reached the end of the bounce
+        		bouncing = false;
+	        }
+	        else {
+	        	body.AddForce(Vector2.right * bounceAccel);
+            }
         }
 
         // Handle y velocity stuff
