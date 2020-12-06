@@ -5,6 +5,4 @@ A month long project for September 2020. This is my first game ever, and I set o
 Gameplay:
 This is a platformer, and your only input is jump. Collect boosts to speed up, and keep collecting or your speed will run out. However, be careful of collecting too many; your speed has no limit. Running into a wall cuts your speed in half, stranding you with no boosts, or potentially bringing you down to a manageable speed.
 
-Example Gameplay:
-
-![](https://www.youtube.com/watch?v=6_NDl6xjsiE)
+Example Gameplay (30 sec): https://www.youtube.com/watch?v=6_NDl6xjsiE
