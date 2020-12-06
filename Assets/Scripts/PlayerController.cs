@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 public class PlayerController : MonoBehaviour {
 	public Rigidbody2D body;
 	public LayerMask ground;
     public GameObject speedText;
 
+    // Public parameters
     public float speedDamp = 3f;
 	public float jumpForce = 3f;
 	public float groundCheckRadius = 0.15f;
@@ -20,28 +22,38 @@ public class PlayerController : MonoBehaviour {
 	private Inputs controls;
 	private bool jump = false;
 
+    // Bounce state tracking
     private bool bounce = false;
     private bool bouncing = false;
-    private int contactCapacity = 5;
-    private ContactPoint2D[] contacts;
-    private int prevNumContacts = 0;
-    private float lastXVel = 0f;
-    private Vector2 prevBodyPos;
     private float goalVelocity = 0f;
     private float bounceAccel = 0f;
     private float bounceTimeElapsed = 0f;
 
+    // Rigidbody contact tracking 
+    private int contactCapacity = 5;
+    private ContactPoint2D[] contacts;
+    private int prevNumContacts = 0;
+
+    // State memories
+    private float lastXVel = 0f;
+    private Vector2 prevBodyPos;
+    private Vector2 respawnPoint;
+
     void Awake() {
-    	controls = new Inputs();
-        controls.Player.Jump.started += _ => jump = true;
-        controls.Player.Jump.performed += _ => jump = false;
+        respawnPoint = body.position;
 
         speedText.GetComponent<SpeedDisplay>();
 
         contacts = new ContactPoint2D[contactCapacity];
+
+    	controls = new Inputs();
+        controls.Player.Jump.started += _ => jump = true;
+        controls.Player.Jump.performed += _ => jump = false;
+        controls.Player.Respawn.started += _ => Respawn();
+        controls.Player.Escape.started += _ => Quit();
     }
 
-    void Update() {
+    void FixedUpdate() {
         // Handle x velocity stuff
         if(!bouncing && !bounce) { // Default state
             if(body.velocity.x > 0) {
@@ -55,12 +67,13 @@ public class PlayerController : MonoBehaviour {
             bouncing = true;
 
             goalVelocity = lastXVel * bounceSpeedKillFactor;
-            bounceAccel = (goalVelocity + lastXVel) / (bounceTime * 10); // 10 is an arbitrary factor so bounceTime makes more sense
+            bounceAccel = -1; //Don't set it till we know our backwards speed
             bounceTimeElapsed = 0;
 
             body.AddForce(Vector2.left * (body.mass * lastXVel), ForceMode2D.Impulse);
         }
         else if(bouncing) { // We're mid bounce
+            if(bounceAccel == -1) bounceAccel = (goalVelocity - body.velocity.x) / bounceTime; // 10 is an arbitrary factor so bounceTime makes more sense
         	bounceTimeElapsed += Time.deltaTime;
         	if(bounceTimeElapsed >= bounceTimeout || body.velocity.x >= goalVelocity) { // We've reached the end of the bounce
         		bouncing = false;
@@ -77,12 +90,14 @@ public class PlayerController : MonoBehaviour {
 	        	jump = false;
 	        }
     	}
+
+        // Update state memory
+        prevBodyPos = body.position;
+        lastXVel = body.velocity.x;
     }
 
     void LateUpdate() {
         speedText.GetComponent<SpeedDisplay>().setSpeed(body.velocity.x); // Update speed display
-        prevBodyPos = body.position;
-        lastXVel = body.velocity.x;
     }
 
     void OnCollisionEnter2D(Collision2D collision) {
@@ -129,6 +144,15 @@ public class PlayerController : MonoBehaviour {
     bool Grounded() {
     	RaycastHit2D hit = Physics2D.CircleCast(new Vector2(transform.position.x, transform.position.y), groundCheckRadius, Vector2.down,groundCheckTolerance, ground.value);
     	return (hit.collider != null && hit.point.y < transform.position.y);
+    }
+
+    void Respawn() {
+        SceneManager.LoadScene("SampleScene");
+    }
+
+    void Quit() {
+        Debug.Log("Quit");
+        Application.Quit();
     }
 
     public void boost(float speed) {

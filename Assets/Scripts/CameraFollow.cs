@@ -9,7 +9,7 @@ public class CameraFollow : MonoBehaviour
 	public float xOffset;
 	public float smoothing;
 
-	void LateUpdate() {
+	void FixedUpdate() {
 		float targetX = target.position.x + xOffset;
 		float delta = (targetX - transform.position.x) * smoothing;
 		transform.Translate(delta, 0, 0);
